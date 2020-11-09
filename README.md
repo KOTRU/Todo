@@ -1,3 +1,3 @@
-React app - Todo /n
+React app - Todo
 
 For start use - npm start 
