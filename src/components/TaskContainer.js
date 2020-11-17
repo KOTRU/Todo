@@ -92,7 +92,6 @@ export default function TaskContainer(props) {
     });
     setTasks(updatedTasks);
   }
-  console.log(tasks);
   var taskListContentContainer = (
     <Grid
       item

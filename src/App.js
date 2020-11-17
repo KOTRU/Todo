@@ -6,6 +6,11 @@ import Grid from "@material-ui/core/Grid";
 
 import CssBaseline from "@material-ui/core/CssBaseline";
 import { ThemeProvider, createMuiTheme } from "@material-ui/core/styles";
+
+import { db } from "./config";
+import { ifObjectIsEmpty } from "./IsNullObject";
+import { Paper } from "@material-ui/core";
+
 const theme = createMuiTheme({
   overrides: {
     MuiCssBaseline: {
@@ -28,9 +33,39 @@ const localizedNames = {
   Active: "активные",
   Completed: "завершенные",
 };
+
+function addNewTask(task) {
+  db.ref("/taskList/tasks").push({
+    task: [...task],
+  });
+  this.setTasks({
+    presentToDo: "",
+  });
+}
+
 function App(props) {
   const [filter, setFilter] = useState("All");
+  const [tasks, setTasks] = useState(props.tasks);
 
+  function addNewTaskList(taskList) {
+    db.ref("/taskList").push({
+      taskList: taskList.Name,
+      tasks: taskList.tasks,
+    });
+    //setTasks([...tasks, taskList]);
+  }
+
+  // addNewTaskList({
+  //   Name: "FirstTask",
+  //   tasks: [
+  //     {
+  //       id: "id" + nanoid(),
+  //       name: "Eat",
+  //       completed: true,
+  //       date: new Date(),
+  //     },
+  //   ],
+  // });
   const filterList = FILTER_NAMES.map((name) => (
     <Grid item xs={4} key={nanoid()}>
       <FilterButton
@@ -42,16 +77,22 @@ function App(props) {
       />
     </Grid>
   ));
-  const headingText = `Списков -  ${props.tasks.length} `;
-  const taskContainers = props.tasks.map((container) => (
-    <li style={{ float: "left", marginLeft: "1rem" }} key={nanoid()}>
-      <TaskContainer
-        name={container.taskList}
-        tasksList={container.tasks}
-        filter={FILTER_MAP[filter]}
-      />
-    </li>
-  ));
+  const headingText = `Списков -  ${
+    ifObjectIsEmpty(tasks) ? tasks.length : 0
+  } `;
+  const taskContainers = ifObjectIsEmpty(tasks) ? (
+    tasks.map((container) => (
+      <li style={{ float: "left", marginLeft: "1rem" }} key={nanoid()}>
+        <TaskContainer
+          name={container.taskList}
+          tasksList={container.tasks}
+          filter={FILTER_MAP[filter]}
+        />
+      </li>
+    ))
+  ) : (
+    <li> </li>
+  );
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
