@@ -7,14 +7,26 @@ import { nanoid } from "nanoid";
 import { db } from "./config";
 import { ifObjectIsEmpty } from "./IsNullObject";
 let tempTasks = [];
-let ref = db.ref("/taskList");
+let ref = db.ref("/");
 ref.once("value", (querySnapShot) => {
   let data = querySnapShot.val() ? querySnapShot.val() : {};
-  if (ifObjectIsEmpty(data)) tempTasks = Object.values(data);
-  console.log(tempTasks);
+  if (ifObjectIsEmpty(data)) {
+    tempTasks = Object.values(data);
+    console.log(tempTasks);
+    tempTasks = tempTasks.map((temp) => {
+      return {
+        ...temp,
+        tasks: Object.values(temp.tasks)
+          .filter((task) => task.id != -1)
+          .map((task) => {
+            return { ...task, date: new Date(task.date) };
+          }),
+      };
+    });
+  }
   ReactDOM.render(
     <React.StrictMode>
-      <Container maxWidth="sm">
+      <Container maxWidth="md">
         <App tasks={tempTasks} />
       </Container>
     </React.StrictMode>,

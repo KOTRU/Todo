@@ -4,6 +4,7 @@ import Grid from "@material-ui/core/Grid";
 import Typography from "@material-ui/core/Typography";
 import Checkbox from "@material-ui/core/Checkbox";
 import TextField from "@material-ui/core/TextField";
+import EndIcon from "@material-ui/icons/Cancel";
 
 import DateFnsUtils from "@date-io/date-fns";
 
@@ -18,8 +19,8 @@ import Switch from "@material-ui/core/Switch";
 export default function Todo(props) {
   const [isEditing, setEditing] = useState(false);
   const [newName, setNewName] = useState(props.name);
-  const [newDate, setNewDate] = useState(new Date());
-
+  const [newDate, setNewDate] = useState(props.date);
+  const [isEnded, setIsEnded] = useState(props.date < new Date());
   const useStyles = makeStyles((theme) => ({
     root: {
       flexGrow: 1,
@@ -29,7 +30,7 @@ export default function Todo(props) {
     paper: {
       padding: theme.spacing(2),
       background: "linear-gradient(45deg, #6bffc3 30%, #abf4d7 90%)",
-      maxWidth: "15rem",
+      maxWidth: "18rem",
     },
     editBtn: {
       background: "linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)",
@@ -60,6 +61,7 @@ export default function Todo(props) {
   function handleSubmit(e) {
     e.preventDefault();
     props.editTask(props.id, newName, newDate);
+    setIsEnded(newDate < new Date());
     setEditing(false);
   }
 
@@ -130,6 +132,11 @@ export default function Todo(props) {
       </Paper>
     </form>
   );
+  const endIconTemplate = (
+    <Grid item xs={1}>
+      <EndIcon color="error" fontSize="small"></EndIcon>
+    </Grid>
+  );
   const viewTemplate = (
     <div className={classes.root}>
       <Paper className={classes.paper}>
@@ -149,24 +156,34 @@ export default function Todo(props) {
             direction="row"
             xs={12}
           >
-            <Grid item xs={3}>
+            <Grid item xs={2}>
               <Switch
                 color="primary"
                 checked={props.completed}
+                size="small"
+                edge="start"
                 onChange={() => props.toggleTaskCompleted(props.id)}
               ></Switch>
             </Grid>
-            <Grid item zeroMinWidth xs={9}>
+            <Grid item zeroMinWidth xs={10}>
               <Typography noWrap variant="subtitle1">
                 {props.name}
               </Typography>
-              <MuiPickersUtilsProvider utils={DateFnsUtils} locale={ruLocale}>
-                <DateTimePicker
-                  value={props.date}
-                  disabled
-                  format="d MMM yyyy HH mm"
-                />
-              </MuiPickersUtilsProvider>{" "}
+              <Grid item container xs={12} spacing={1} alignItems="center">
+                <Grid item xs={11}>
+                  <MuiPickersUtilsProvider
+                    utils={DateFnsUtils}
+                    locale={ruLocale}
+                  >
+                    <DateTimePicker
+                      value={props.date}
+                      disabled
+                      format="d MMM yyyy HH mm"
+                    />
+                  </MuiPickersUtilsProvider>
+                </Grid>
+                {isEnded && endIconTemplate}
+              </Grid>
             </Grid>
           </Grid>
           <Grid container item spacing={1} justify="center" xs={12}>

@@ -9,8 +9,8 @@ import { ThemeProvider, createMuiTheme } from "@material-ui/core/styles";
 
 import { db } from "./config";
 import { ifObjectIsEmpty } from "./IsNullObject";
-import { Paper } from "@material-ui/core";
-
+import IconButton from "@material-ui/core/IconButton";
+import AddIcon from "@material-ui/icons/Add";
 const theme = createMuiTheme({
   overrides: {
     MuiCssBaseline: {
@@ -22,39 +22,94 @@ const theme = createMuiTheme({
     },
   },
 });
-const FILTER_MAP = {
-  All: () => true,
-  Active: (task) => !task.completed,
-  Completed: (task) => task.completed,
-};
-const FILTER_NAMES = Object.keys(FILTER_MAP);
-const localizedNames = {
-  All: "все",
-  Active: "активные",
-  Completed: "завершенные",
-};
 
-function addNewTask(task) {
-  db.ref("/taskList/tasks").push({
-    task: [...task],
-  });
-  this.setTasks({
-    presentToDo: "",
-  });
+function addNewTask(task, taskList) {
+  let newTask = db
+    .ref("/taskLists_" + taskList)
+    .child("/tasks")
+    .push();
+  let taskKey = newTask.key;
+  task.id = taskKey;
+  task.date = task.date.getTime();
+  newTask.set(task);
+  console.log(task);
+  return taskKey;
 }
 
+function addNewTaskList(taskList) {
+  db.ref("/taskLists_" + taskList.taskList).set({
+    taskList: taskList.taskList,
+    tasks: taskList.tasks,
+    isCreated: taskList.isCreated,
+  });
+}
 function App(props) {
   const [filter, setFilter] = useState("All");
   const [tasks, setTasks] = useState(props.tasks);
 
-  function addNewTaskList(taskList) {
-    db.ref("/taskList").push({
-      taskList: taskList.Name,
-      tasks: taskList.tasks,
-    });
-    //setTasks([...tasks, taskList]);
+  function handleTaskListCreationStart() {
+    let task = {
+      taskList: "",
+      tasks: [
+        {
+          id: -1,
+          name: "temp",
+          completed: true,
+          date: new Date(),
+        },
+      ],
+      isCreated: false,
+    };
+    setTasks([...tasks, task]);
   }
+  function handleTaskListCreationEnd(name) {
+    const editedTaskList = tasks.map((task) => {
+      if ("" === task.taskList) {
+        task.taskList = name;
+        task.isCreated = true;
+        addNewTaskList(task);
+        task.tasks = task.tasks.filter((task) => task.id != -1);
 
+        return { ...task, taskList: name, isCreated: true };
+      }
+      return task;
+    });
+    setTasks(editedTaskList);
+  }
+  function handleStopTaskListCreation() {
+    const tasksFiltred = tasks.filter((task) => task.taskList != "");
+    setTasks(tasksFiltred);
+  }
+  function handleAddNewTask(task, taskList) {
+    task.id = addNewTask(task, taskList);
+    tasks.map((Ttask) => {
+      if (Ttask.taskList == taskList) {
+        Ttask.tasks = [...Ttask.tasks, task];
+      }
+    });
+  }
+  function handleTaskCompletion(taskList, taskId, state) {
+    db.ref("/taskLists_" + taskList)
+      .child("/tasks")
+      .child(taskId)
+      .update({ completed: state });
+  }
+  function handleTaskDeletion(taskList, taskId) {
+    db.ref("/taskLists_" + taskList)
+      .child("/tasks")
+      .child(taskId)
+      .remove();
+  }
+  function handleTaskChange(taskList, taskId, newName, newDate) {
+    db.ref("/taskLists_" + taskList)
+      .child("/tasks")
+      .child(taskId)
+      .update({ name: newName, date: newDate.getTime() });
+  }
+  function handleDeleteContainer(taskList) {
+    db.ref("/taskLists_" + taskList).remove();
+    setTasks(tasks.filter((tTaskList) => tTaskList.taskList != taskList));
+  }
   // addNewTaskList({
   //   Name: "FirstTask",
   //   tasks: [
@@ -66,29 +121,31 @@ function App(props) {
   //     },
   //   ],
   // });
-  const filterList = FILTER_NAMES.map((name) => (
-    <Grid item xs={4} key={nanoid()}>
-      <FilterButton
-        key={name}
-        localizedName={localizedNames[name]}
-        name={name}
-        isPressed={name === filter}
-        setFilter={setFilter}
-      />
-    </Grid>
-  ));
+
   const headingText = `Списков -  ${
     ifObjectIsEmpty(tasks) ? tasks.length : 0
   } `;
   const taskContainers = ifObjectIsEmpty(tasks) ? (
     tasks.map((container) => (
-      <li style={{ float: "left", marginLeft: "1rem" }} key={nanoid()}>
+      <Grid
+        item
+        xs={5}
+        style={{ float: "left", marginLeft: "1rem", marginBottom: "1rem" }}
+        key={nanoid()}
+      >
         <TaskContainer
           name={container.taskList}
           tasksList={container.tasks}
-          filter={FILTER_MAP[filter]}
+          isCreated={container.isCreated}
+          addTaskList={handleTaskListCreationEnd}
+          stopCreating={handleStopTaskListCreation}
+          addNewTask={handleAddNewTask}
+          changeTaskCompletion={handleTaskCompletion}
+          deleteTask={handleTaskDeletion}
+          taskChange={handleTaskChange}
+          deleteContainer={handleDeleteContainer}
         />
-      </li>
+      </Grid>
     ))
   ) : (
     <li> </li>
@@ -98,12 +155,17 @@ function App(props) {
       <CssBaseline />
       <div>
         <h1>Что надо сделать</h1>
-        <div>
-          <h3>Фильтры</h3>
-          <Grid container>{filterList}</Grid>
-        </div>
         <h2 id="list-heading">{headingText}</h2>
-        <ul style={{ listStyleType: "none" }}> {taskContainers}</ul>
+        <Grid container spacing={1} alignItems="baseline">
+          <Grid item container justify="center" xs={10}>
+            {taskContainers}
+          </Grid>
+          <Grid item xs={2}>
+            <IconButton onClick={() => handleTaskListCreationStart()}>
+              <AddIcon />
+            </IconButton>
+          </Grid>
+        </Grid>
       </div>
     </ThemeProvider>
   );

@@ -72,21 +72,8 @@ export default function Form(props) {
       onSubmit={handleSubmit}
     >
       <Paper className={classes.paper}>
-        <Grid
-          container
-          spacing={1}
-          justify="center"
-          direction="column"
-          alignItems="center"
-        >
-          <Grid
-            item
-            container
-            spacing={1}
-            alignItems="center"
-            direction="row"
-            xs={12}
-          >
+        <Grid container spacing={1} direction="column" alignItems="center">
+          <Grid item xs={12}>
             <TextField
               required
               id="standard-required"
@@ -103,7 +90,7 @@ export default function Form(props) {
               />
             </MuiPickersUtilsProvider>
           </Grid>
-          <Grid container item spacing={1} justify="center" xs={12}>
+          <Grid item container spacing={1} justify="center" xs={12}>
             <Grid item xs={12}>
               <Button
                 className={classes.Btn}
