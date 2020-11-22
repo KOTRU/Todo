@@ -20,7 +20,6 @@ const useStyles = makeStyles((theme) => ({
     padding: 0,
     background: "linear-gradient(45deg, #6bffc3 30%, #abf4d7 90%)",
     marginTop: "1.5rem",
-    minWidth: "25rem",
   },
   invisiblePaper: {
     visibility: "hidden",
@@ -49,8 +48,7 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: 3,
     boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
     color: "white",
-    width: "100%",
-    padding: "2px 0px",
+    padding: "0px 30px",
   },
 }));
 
@@ -156,35 +154,24 @@ export default function TaskContainer(props) {
   const viewTemplate = (
     <div className={classes.root}>
       <Paper className={classes.paper}>
-        <Grid container direction="column">
-          <Grid
-            item
-            container
-            direction="row"
-            xs={12}
-            alignItems="center"
-            justify="center"
-          >
-            <Grid item xs={10}>
-              <Button
-                className={classes.Btn}
-                onClick={() => setIsOpened(!isOpened)}
-              >
-                <Typography className={classes.buttonType} variant="button">
-                  {name}
-                </Typography>
-              </Button>
-            </Grid>
-            <Grid item xs={2}>
-              <Button
-                className={classes.Btn2}
-                onClick={() => props.deleteContainer(name)}
-              >
-                <CloseIcon></CloseIcon>
-              </Button>
-            </Grid>
+        <Grid container direction="column" alignItems="stretch">
+          <Grid item xs={12}>
+            <Button
+              className={classes.Btn}
+              onClick={() => setIsOpened(!isOpened)}
+            >
+              <Typography className={classes.buttonType} variant="button">
+                {name}
+              </Typography>
+            </Button>
           </Grid>
           {isOpened && taskListContentContainer}
+          <Button
+            className={classes.Btn2}
+            onClick={() => props.deleteContainer(name)}
+          >
+            <CloseIcon></CloseIcon>
+          </Button>
         </Grid>
       </Paper>
     </div>
@@ -202,7 +189,7 @@ export default function TaskContainer(props) {
             <TextField
               required
               id="standard-required"
-              label="Название списка"
+              label="Задача"
               value={name}
               onChange={handleNameChange}
               style={{ width: "100%" }}
