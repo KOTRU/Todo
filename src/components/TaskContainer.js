@@ -9,7 +9,10 @@ import { Button } from "@material-ui/core";
 import TextField from "@material-ui/core/TextField";
 import CloseIcon from "@material-ui/icons/Close";
 import { nanoid } from "nanoid";
-
+import Divider from "@material-ui/core/Divider";
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
+import ListItemText from "@material-ui/core/ListItemText";
 const useStyles = makeStyles((theme) => ({
   root: {
     flexGrow: 1,
@@ -54,25 +57,44 @@ const useStyles = makeStyles((theme) => ({
 
 export default function TaskContainer(props) {
   const [isOpened, setIsOpened] = useState(true);
+  const [isOpenedDone, setisOpenedDone] = useState(true);
   const [name, setName] = useState(props.name);
   const [tasks, setTasks] = useState(props.tasksList);
   const [isCreated, setIsCreated] = useState(props.isCreated);
 
   const classes = useStyles();
-  const taskList = tasks.map((task) => (
-    <Grid item xs={12} key={task.id}>
-      <Todo
-        id={task.id}
-        name={task.name}
-        completed={task.completed}
-        key={task.id}
-        date={task.date}
-        toggleTaskCompleted={toggleTaskCompleted}
-        deleteTask={deleteTask}
-        editTask={editTask}
-      />
-    </Grid>
-  ));
+  const taskList = tasks
+    .filter((task) => task.completed == false)
+    .map((task) => (
+      <ListItem key={task.id}>
+        <Todo
+          id={task.id}
+          name={task.name}
+          completed={task.completed}
+          key={task.id}
+          date={task.date}
+          toggleTaskCompleted={toggleTaskCompleted}
+          deleteTask={deleteTask}
+          editTask={editTask}
+        />
+      </ListItem>
+    ));
+  const doneTaskList = tasks
+    .filter((task) => task.completed == true)
+    .map((task) => (
+      <ListItem key={task.id}>
+        <Todo
+          id={task.id}
+          name={task.name}
+          completed={task.completed}
+          key={task.id}
+          date={task.date}
+          toggleTaskCompleted={toggleTaskCompleted}
+          deleteTask={deleteTask}
+          editTask={editTask}
+        />
+      </ListItem>
+    ));
   function addTask(taskName, date) {
     const newTask = {
       id: "id" + nanoid(),
@@ -80,13 +102,13 @@ export default function TaskContainer(props) {
       completed: false,
       date: date,
     };
-    props.addNewTask(newTask, name);
+    props.addNewTask(newTask, props.id);
     setTasks([...tasks, newTask]);
   }
   function deleteTask(id) {
     const remainingTasks = tasks.filter((task) => id !== task.id);
     setTasks(remainingTasks);
-    props.deleteTask(name, id);
+    props.deleteTask(props.id, id);
   }
   function editTask(id, newName, newDate) {
     const editedTaskList = tasks.map((task) => {
@@ -95,7 +117,7 @@ export default function TaskContainer(props) {
       }
       return task;
     });
-    props.taskChange(name, id, newName, newDate);
+    props.taskChange(props.id, id, newName, newDate);
     setTasks(editedTaskList);
   }
   function toggleTaskCompleted(id) {
@@ -108,7 +130,7 @@ export default function TaskContainer(props) {
       return task;
     });
     setTasks(updatedTasks);
-    props.changeTaskCompletion(name, id, state);
+    props.changeTaskCompletion(props.id, id, state);
   }
   function handleNameChange(e) {
     setName(e.target.value);
@@ -119,7 +141,7 @@ export default function TaskContainer(props) {
       alert("Введите название");
       return;
     }
-    props.addTaskList(name);
+    props.addTaskList(props.id, name);
     setName("");
   }
   var taskListContentContainer = (
@@ -140,7 +162,21 @@ export default function TaskContainer(props) {
         direction="column"
         alignItems="center"
       >
-        {taskList}
+        <List className={classes.root}>
+          {taskList}
+          <Divider light />
+          <ListItem>
+            <Button
+              className={classes.Btn}
+              onClick={() => setisOpenedDone(!isOpenedDone)}
+            >
+              <Typography className={classes.buttonType} variant="button">
+                Выполненные
+              </Typography>
+            </Button>
+          </ListItem>
+          {isOpenedDone && doneTaskList}
+        </List>
       </Grid>
       <Grid
         item
@@ -168,7 +204,7 @@ export default function TaskContainer(props) {
           {isOpened && taskListContentContainer}
           <Button
             className={classes.Btn2}
-            onClick={() => props.deleteContainer(name)}
+            onClick={() => props.deleteContainer(props.id)}
           >
             <CloseIcon></CloseIcon>
           </Button>
@@ -199,7 +235,10 @@ export default function TaskContainer(props) {
             <Grid item xs={12}>
               <Button
                 className={classes.Btn}
-                onClick={() => props.stopCreating()}
+                onClick={() => {
+                  console.log(props);
+                  props.stopCreating(props.id);
+                }}
               >
                 <Typography className={classes.buttonType} variant="button">
                   Отмена

@@ -23,11 +23,8 @@ const theme = createMuiTheme({
   },
 });
 
-function addNewTask(task, taskList) {
-  let newTask = db
-    .ref("/taskLists_" + taskList)
-    .child("/tasks")
-    .push();
+function addNewTask(task, id) {
+  let newTask = db.ref(id).child("/tasks").push();
   let taskKey = newTask.key;
   task.id = taskKey;
   task.date = task.date.getTime();
@@ -37,11 +34,11 @@ function addNewTask(task, taskList) {
 }
 
 function addNewTaskList(taskList) {
-  db.ref("/taskLists_" + taskList.taskList).set({
-    taskList: taskList.taskList,
-    tasks: taskList.tasks,
-    isCreated: taskList.isCreated,
-  });
+  let newTaskList = db.ref().push();
+  let taskKey = newTaskList.key;
+  taskList.id = taskKey;
+  newTaskList.set(taskList);
+  return taskKey;
 }
 function App(props) {
   const [filter, setFilter] = useState("All");
@@ -50,6 +47,7 @@ function App(props) {
   function handleTaskListCreationStart() {
     let task = {
       taskList: "",
+      id: nanoid(),
       tasks: [
         {
           id: -1,
@@ -62,65 +60,54 @@ function App(props) {
     };
     setTasks([...tasks, task]);
   }
-  function handleTaskListCreationEnd(name) {
+  function handleTaskListCreationEnd(id, name) {
     const editedTaskList = tasks.map((task) => {
-      if ("" === task.taskList) {
+      if (id === task.id) {
         task.taskList = name;
         task.isCreated = true;
-        addNewTaskList(task);
+        task.id = addNewTaskList(task);
         task.tasks = task.tasks.filter((task) => task.id != -1);
 
-        return { ...task, taskList: name, isCreated: true };
+        return {
+          ...task,
+          taskList: name,
+          isCreated: true,
+          id: task.id,
+          tasks: task.tasks,
+        };
       }
       return task;
     });
     setTasks(editedTaskList);
   }
-  function handleStopTaskListCreation() {
-    const tasksFiltred = tasks.filter((task) => task.taskList != "");
+  function handleStopTaskListCreation(id) {
+    const tasksFiltred = tasks.filter((task) => task.id != id);
     setTasks(tasksFiltred);
   }
-  function handleAddNewTask(task, taskList) {
-    task.id = addNewTask(task, taskList);
+  function handleAddNewTask(task, id) {
+    task.id = addNewTask(task, id);
     tasks.map((Ttask) => {
-      if (Ttask.taskList == taskList) {
+      if (Ttask.id == id) {
         Ttask.tasks = [...Ttask.tasks, task];
       }
     });
   }
-  function handleTaskCompletion(taskList, taskId, state) {
-    db.ref("/taskLists_" + taskList)
-      .child("/tasks")
-      .child(taskId)
-      .update({ completed: state });
+  function handleTaskCompletion(id, taskId, state) {
+    db.ref(id).child("/tasks").child(taskId).update({ completed: state });
   }
-  function handleTaskDeletion(taskList, taskId) {
-    db.ref("/taskLists_" + taskList)
-      .child("/tasks")
-      .child(taskId)
-      .remove();
+  function handleTaskDeletion(id, taskId) {
+    db.ref(id).child("/tasks").child(taskId).remove();
   }
-  function handleTaskChange(taskList, taskId, newName, newDate) {
-    db.ref("/taskLists_" + taskList)
+  function handleTaskChange(id, taskId, newName, newDate) {
+    db.ref(id)
       .child("/tasks")
       .child(taskId)
       .update({ name: newName, date: newDate.getTime() });
   }
-  function handleDeleteContainer(taskList) {
-    db.ref("/taskLists_" + taskList).remove();
-    setTasks(tasks.filter((tTaskList) => tTaskList.taskList != taskList));
+  function handleDeleteContainer(id) {
+    db.ref(id).remove();
+    setTasks(tasks.filter((tTaskList) => tTaskList.id != id));
   }
-  // addNewTaskList({
-  //   Name: "FirstTask",
-  //   tasks: [
-  //     {
-  //       id: "id" + nanoid(),
-  //       name: "Eat",
-  //       completed: true,
-  //       date: new Date(),
-  //     },
-  //   ],
-  // });
 
   const headingText = `Списков -  ${
     ifObjectIsEmpty(tasks) ? tasks.length : 0
@@ -134,6 +121,7 @@ function App(props) {
         key={nanoid()}
       >
         <TaskContainer
+          id={container.id}
           name={container.taskList}
           tasksList={container.tasks}
           isCreated={container.isCreated}
